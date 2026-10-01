@@ -10,13 +10,13 @@ from cloudforge_auth_core import AuthConfig
 
 
 class AuthSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="CLOUDFORGE_")
+    model_config = SettingsConfigDict(env_prefix="AUTH_")
 
     jwt_issuer: str = "https://identity.cloudforge.internal"
-    jwt_jwks_uri: str = "https://identity.cloudforge.internal/.well-known/jwks.json"
+    jwks_url: str = "https://identity.cloudforge.internal/.well-known/jwks.json"
     # Contract v1 §2: audience is platform-wide, not per-Studio.
     jwt_audience: str = "cloudforge-platform"
-    jwt_jwks_cache_ttl_seconds: int = 3600
+    jwks_cache_ttl_seconds: int = 3600
 
 
 auth_settings = AuthSettings()
@@ -27,6 +27,6 @@ def build_auth_config() -> AuthConfig:
     return AuthConfig(
         issuer=auth_settings.jwt_issuer,
         audience=auth_settings.jwt_audience,
-        jwks_url=auth_settings.jwt_jwks_uri,
-        jwks_cache_ttl_seconds=auth_settings.jwt_jwks_cache_ttl_seconds,
+        jwks_url=auth_settings.jwks_url,
+        jwks_cache_ttl_seconds=auth_settings.jwks_cache_ttl_seconds,
     )
