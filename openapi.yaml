@@ -4,7 +4,7 @@ info:
   description: >-
     Studio ตัวที่สามของ CloudForge Platform — RAG (Retrieval-Augmented Generation):
     รับคำถาม, ดึงเอกสารที่เกี่ยวข้องจาก Knowledge Studio, ส่งให้ LLM ตอบพร้อมอ้างอิงแหล่งที่มา
-  version: 0.1.0
+  version: 0.2.0
   x-owner: nova-team
   x-domain: nova
   x-governance-id: CFG-NOVA-001
@@ -77,6 +77,8 @@ paths:
           description: Token ไม่ถูกต้องหรือหมดอายุ
         "403":
           description: Token ถูกต้องแต่ไม่มี scope nova:query
+        "503":
+          description: JWKS endpoint unreachable
 
 components:
   securitySchemes:
