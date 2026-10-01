@@ -1,4 +1,4 @@
-﻿"""Auth layer ของ Nova Studio — thin wrapper รอบ cloudforge-auth-core
+"""Auth layer ของ Nova Studio — thin wrapper รอบ cloudforge-auth-core
 Studio ไม่ควรมี local token (ไม่ควรมี create_access_token)
 ไม่ควร implement JWT verify / scope parse เอง
 """
