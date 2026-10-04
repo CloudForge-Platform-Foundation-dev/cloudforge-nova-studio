@@ -17,9 +17,26 @@ class AuthSettings(BaseSettings):
     # Contract v1 §2: audience is platform-wide, not per-Studio.
     jwt_audience: str = "cloudforge-platform"
     jwks_cache_ttl_seconds: int = 3600
+    # Identity Service token endpoint — used only to get Nova's own service
+    # token for calling Knowledge Studio (see src/auth/service_token.py).
+    token_url: str = "https://identity.cloudforge.internal/token"
 
 
 auth_settings = AuthSettings()
+
+
+class ServiceCredentialsSettings(BaseSettings):
+    """Nova's own client credentials at the Identity Service (client_id
+    `nova-studio`). There is deliberately no default secret: when it is empty
+    every /query fails with 503 instead of calling Knowledge unauthenticated."""
+
+    model_config = SettingsConfigDict(env_prefix="NOVA_")
+
+    client_id: str = "nova-studio"
+    client_secret: str = ""
+
+
+service_credentials = ServiceCredentialsSettings()
 
 
 def build_auth_config() -> AuthConfig:
