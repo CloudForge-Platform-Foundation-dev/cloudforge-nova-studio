@@ -2,6 +2,19 @@
 
 รูปแบบอ้างอิง [Keep a Changelog](https://keepachangelog.com/) และ [Semantic Versioning](https://semver.org/)
 
+## [Unreleased]
+
+### Added
+- **Nova → Knowledge Studio ใช้ service token ของ Nova เอง** (decision 1b = b, 2026-10-03)
+  - `src/auth/service_token.py`: `ServiceTokenProvider` ขอ token (scope `knowledge:read`) จาก Identity Service ด้วย client credentials, แคชและต่ออายุก่อนหมดอายุ
+  - `KnowledgeStudioClient` ใช้ token จาก provider อัตโนมัติ และเมื่อ Knowledge ตอบ 401 จะล้าง token แล้วลองใหม่ 1 ครั้ง
+  - env ใหม่: `AUTH_TOKEN_URL`, `NOVA_CLIENT_ID`, `NOVA_CLIENT_SECRET` (ไม่มีค่า default ของ secret)
+  - ต้องการให้ Identity Service อนุญาต `knowledge:read` ให้ client `nova-studio` (cloudforge-identity-service PR #1)
+
+### Fixed
+- `POST /query` ไม่ได้ส่ง token ไป Knowledge Studio เลย (Knowledge ที่บังคับ `knowledge:read` จะตอบ 401 และ Nova ตอบ 500) — เทสต์เดิมไม่เห็นเพราะ mock client ทั้งตัว
+- ความล้มเหลวจาก Knowledge Studio ตอบ **502** และขอ service token ไม่ได้ตอบ **503** แทน 500 ที่ไม่ได้ดักไว้
+
 ## [0.2.0] - 2026-09-24
 
 ### Changed

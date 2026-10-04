@@ -1,9 +1,15 @@
 """API routes ของ Nova Studio"""
-from fastapi import APIRouter, Depends
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from src.auth.dependencies import Principal, require_scope
+from src.auth.service_token import ServiceTokenError
 from src.models.schemas import QueryRequest, QueryResponse
+from src.rag.knowledge_client import KnowledgeStudioError
 from src.rag.service import RAGService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -22,7 +28,21 @@ async def query(
     principal: Principal = Depends(require_scope("nova:query")),
     rag_service: RAGService = Depends(get_rag_service),
 ) -> QueryResponse:
-    return await rag_service.answer(request.question, top_k=request.top_k)
+    try:
+        return await rag_service.answer(request.question, top_k=request.top_k)
+    except ServiceTokenError as exc:
+        # Nova's own credentials / the Identity token endpoint, not the caller's fault
+        logger.error("cannot obtain service token for Knowledge Studio: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Upstream authentication unavailable",
+        ) from None
+    except KnowledgeStudioError as exc:
+        logger.warning("Knowledge Studio call failed: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Knowledge Studio request failed",
+        ) from None
 
 
 @router.get("/health")

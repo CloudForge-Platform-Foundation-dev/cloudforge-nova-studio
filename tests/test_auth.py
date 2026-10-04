@@ -111,3 +111,39 @@ def test_deprecated_scopes_list_shape_is_rejected(client):
         headers={"Authorization": f"Bearer {token}"},
     )
     assert resp.status_code == 401
+
+
+class _FailingRAGService:
+    def __init__(self, exc: Exception) -> None:
+        self._exc = exc
+
+    async def answer(self, question: str, *, top_k: int = 5):
+        raise self._exc
+
+
+def _query_with_failing_service(client, exc: Exception):
+    from src.api.routes import get_rag_service
+    app.dependency_overrides[get_rag_service] = lambda: _FailingRAGService(exc)
+    token = _make_token(scope="nova:query")
+    return client.post(
+        "/query", json={"question": "hi"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+
+def test_query_is_503_when_service_token_cannot_be_obtained(client):
+    from src.auth.service_token import ServiceTokenError
+    resp = _query_with_failing_service(client, ServiceTokenError("secret detail"))
+    assert resp.status_code == 503
+    assert resp.json()["detail"] == "Upstream authentication unavailable"
+    assert "secret detail" not in resp.text
+
+
+def test_query_is_502_when_knowledge_studio_fails(client):
+    from src.rag.knowledge_client import KnowledgeStudioError
+    resp = _query_with_failing_service(
+        client, KnowledgeStudioError("Knowledge Studio returned HTTP 500")
+    )
+    assert resp.status_code == 502
+    assert resp.json()["detail"] == "Knowledge Studio request failed"
+    assert "500" not in resp.text
