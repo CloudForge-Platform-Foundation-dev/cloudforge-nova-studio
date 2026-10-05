@@ -12,6 +12,7 @@
   - ต้องการให้ Identity Service อนุญาต `knowledge:read` ให้ client `nova-studio` (cloudforge-identity-service PR #1)
 
 ### Fixed
+- **Nova เรียก path ที่ Knowledge Studio ไม่มี:** client ยิง `POST /search` แต่ Knowledge เปิดเฉพาะ `POST /api/v1/knowledge/query` (ได้ 404 → Nova ตอบ 502) แก้ path และ map `document_title` -> `source` ให้ตรงกับ response จริงของ Knowledge (ไม่มีฟิลด์ `source`)
 - `POST /query` ไม่ได้ส่ง token ไป Knowledge Studio เลย (Knowledge ที่บังคับ `knowledge:read` จะตอบ 401 และ Nova ตอบ 500) — เทสต์เดิมไม่เห็นเพราะ mock client ทั้งตัว
 - ความล้มเหลวจาก Knowledge Studio ตอบ **502** และขอ service token ไม่ได้ตอบ **503** แทน 500 ที่ไม่ได้ดักไว้
 

@@ -6,6 +6,26 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
+# Knowledge Studio's real contract (cloudforge-knowledge-studio openapi.yaml):
+#   POST /api/v1/knowledge/query   scope knowledge:read
+#   body     {"query": str, "top_k": 1..50}
+#   response {"query": str, "results": [{"chunk_id", "document_id",
+#             "document_title", "text", "score"}]}
+# Nova used to call POST /search, which Knowledge does not have (404).
+QUERY_PATH = "/api/v1/knowledge/query"
+
+
+def _to_source(match: dict) -> dict:
+    """Map one Knowledge match to the {"text", "source", "score"} shape that
+    RAGService consumes. Knowledge has no `source` field; its `document_title`
+    is the human-readable origin, so use that (an explicit `source`, if a future
+    Knowledge version adds one, still wins)."""
+    return {
+        "text": match.get("text", ""),
+        "source": match.get("source") or match.get("document_title") or "unknown",
+        "score": match.get("score", 0.0),
+    }
+
 
 class KnowledgeStudioError(Exception):
     """Knowledge Studio could not be reached or returned an error response."""
@@ -35,11 +55,12 @@ class KnowledgeStudioClient:
         self, query: str, *, top_k: int = 5, auth_token: str | None = None
     ) -> list[dict]:
         """
-        เรียก endpoint search ของ Knowledge Studio
+        เรียก POST /api/v1/knowledge/query ของ Knowledge Studio (semantic search)
 
         คืนค่าเป็น list ของ dict รูปแบบ {"text": str, "source": str, "score": float}
-        NOTE: path/response shape ตรงนี้อ้างอิงตาม API ที่ตกลงกันไว้ — ถ้า Knowledge Studio
-        เปลี่ยน contract ต้องอัปเดตที่นี่ด้วย
+        โดย map จาก response จริงของ Knowledge (`document_title` -> `source`)
+        NOTE: path/response shape ตรงนี้ต้องตรงกับ openapi.yaml ของ Knowledge Studio —
+        ถ้า Knowledge เปลี่ยน contract ต้องอัปเดตที่นี่ด้วย
 
         Auth (decision 1b = b): ถ้าไม่ส่ง `auth_token` มา จะใช้ service token ของ Nova
         จาก `token_provider` (scope knowledge:read) — ไม่ forward token ของผู้เรียก
@@ -65,8 +86,8 @@ class KnowledgeStudioClient:
                 f"Knowledge Studio returned HTTP {response.status_code}"
             )
         try:
-            return response.json().get("results", [])
-        except (ValueError, AttributeError):
+            return [_to_source(m) for m in response.json().get("results", [])]
+        except (ValueError, AttributeError, TypeError):
             raise KnowledgeStudioError("Knowledge Studio returned a malformed response") from None
 
     async def _post_search(
@@ -80,7 +101,7 @@ class KnowledgeStudioClient:
                 timeout=self._timeout, transport=self._transport
             ) as client:
                 return await client.post(
-                    f"{self._base_url}/search",
+                    f"{self._base_url}{QUERY_PATH}",
                     json={"query": query, "top_k": top_k},
                     headers=headers,
                 )
