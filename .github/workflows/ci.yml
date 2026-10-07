@@ -8,7 +8,7 @@ on:
 
 jobs:
   governance-gate:
-    uses: niphan1000-cyber1000/foundation-validation/.github/workflows/reusable-gate.yml@v1.0.2
+    uses: CloudForge-Platform-Foundation-dev/foundation-validation/.github/workflows/reusable-gate.yml@v1.0.2
     with:
       spec_path: openapi.yaml
       engine_ref: v1.0.2
