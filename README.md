@@ -25,7 +25,7 @@ docker compose up --build
 
 ## Auth
 
-ใช้ **cloudforge-auth-core v1.1.0** ตาม [CloudForge Identity Contract v1](../CLOUDFORGE-IDENTITY-CONTRACT-v1.md)
+ใช้ **cloudforge-auth-core v1.1.6** ตาม [CloudForge Identity Contract v1](../CLOUDFORGE-IDENTITY-CONTRACT-v1.md)
 
 - Algorithm: **RS256** เท่านั้น (JWKS จาก Identity Service)
 - Scope บังคับบน `/query`: `nova:query`
